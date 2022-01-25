@@ -1,13 +1,13 @@
 import json
 from web3 import Web3
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from os import environ
 from utils import erc20_ABI, int_to_unit, decode_tx_input
 import requests
 
-load_dotenv(find_dotenv())
+load_dotenv()
 
-#global vars
+# * global vars
 RPC_ENDPOINT = ''
 ETHPLORER_API_KEY = ''
 ETHSCAN_API_KEY = ''
@@ -15,6 +15,7 @@ provider = ''
 
 ETHPLORER_API_URL = "https://api.ethplorer.io"
 ETHSCAN_API_URL = "https://api.etherscan.io/api"
+TX_URL = 'https://etherscan.io/tx/'
 
 
 def check_env() -> bool:
@@ -36,8 +37,7 @@ def check_env() -> bool:
 
 def cli_detail(contract_address: str) -> str:
     try:
-        erc20token = provider.eth.contract(
-            address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
+        erc20token = provider.eth.contract(address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
 
         name = erc20token.functions.name().call()
         symbol = erc20token.functions.symbol().call()
@@ -54,11 +54,9 @@ def cli_detail(contract_address: str) -> str:
 
 def cli_balanceOf(contract_address: str, target_address: str) -> str:
     try:
-        erc20token = provider.eth.contract(
-            address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
+        erc20token = provider.eth.contract(address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
 
-        balance_wei = erc20token.functions.balanceOf(
-            Web3.toChecksumAddress(target_address)).call()
+        balance_wei = erc20token.functions.balanceOf(Web3.toChecksumAddress(target_address)).call()
         decimal = erc20token.functions.decimals().call()
         balance_decimal = Web3.fromWei(balance_wei, int_to_unit[decimal])
 
@@ -75,14 +73,13 @@ def cli_watch_tx(contract_address: str) -> str:
     try:
         is_printed_waiting = False
         while True:
-            tx_fromBlock = provider.eth.filter(
-                {'fromBlock': 'latest', "address": Web3.toChecksumAddress(contract_address)}).get_new_entries()
+            tx_fromBlock = provider.eth.filter({'fromBlock': 'latest', "address": Web3.toChecksumAddress(contract_address)}).get_new_entries()
             tx_set = set()
             if tx_fromBlock:
                 for tx in tx_fromBlock:
                     tx_hash = tx['transactionHash'].hex()
                     if tx_hash not in tx_set:
-                        print(f'{environ.get("TX_URL")}{tx_hash}')
+                        print(f'{TX_URL}{tx_hash}')
                         tx_set.add(tx_hash)
                         is_printed_waiting = False
             else:
@@ -151,8 +148,7 @@ def cli_holder(contract_address: str, N: str = '10') -> str:
             return resp.get('error').get('message')
         else:
             with open('top_holders.json', 'w+') as f:
-                data = [{'address': temp.get('address'), 'balance': temp.get(
-                    'balance')} for temp in resp.get('holders')]
+                data = [{'address': temp.get('address'), 'balance': temp.get('balance')} for temp in resp.get('holders')]
                 json.dump(data, f)
             return "Updated top_holders.json success"
 

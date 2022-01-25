@@ -31,7 +31,7 @@ def watch_tx(contract_address):
     click.echo(response)
 
 
-@click.command(name="latest_tx")
+@click.command(name="latest_tx", help="Generate Latest N transaction of CONTRACT_ADDRESS to a file")
 @click.argument('N')
 @click.argument('contract_address')
 def latest_tx(n, contract_address):
@@ -39,7 +39,7 @@ def latest_tx(n, contract_address):
     click.echo(response)
 
 
-@click.command()
+@click.command(help="Generate current top N holders to a text file")
 @click.argument('N')
 @click.argument('contract_address')
 def holders(n, contract_address):
@@ -56,4 +56,4 @@ cli.add_command(holders)
 if __name__ == '__main__' and check_env():
     cli()
 else:
-    print("Please ensure that you create .env correctly. More information is in .env.example")
+    print("Please ensure that you create .env correctly. Example of .env is in .env.example")
