@@ -44,3 +44,5 @@ Commands:
   latest_tx  Generate Latest N transaction of CONTRACT_ADDRESS to a file
   watch_tx   Subscribe Tx from the CONTRACT_ADDRESS in watching mode
 ```
+
+> In command `watch_tx`, if you want to exit, you can use keyboard interupt with `ctrl + c`
