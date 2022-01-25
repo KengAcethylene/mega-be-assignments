@@ -1,5 +1,5 @@
 import click
-from functions import cli_detail, cli_balanceOf, cli_watch_tx
+from functions import check_env, cli_detail, cli_balanceOf, cli_watch_tx, cli_holder
 
 
 @click.group()
@@ -15,7 +15,7 @@ def detail(contract_address):
     click.echo(response)
 
 
-@click.command(help="Show the balanceOf TARGET_ADDRESS on the CONTRACT_ADDRESS in decimals format")
+@click.command(name="balanceOf", help="Show the balanceOf TARGET_ADDRESS on the CONTRACT_ADDRESS")
 @click.argument('contract_address')
 @click.argument('target_address')
 def balanceOf(contract_address, target_address):
@@ -23,17 +23,27 @@ def balanceOf(contract_address, target_address):
     click.echo(response)
 
 
-@click.command(name="watch_tx")
+@click.command(name="watch_tx", help="Subscribe Tx from the CONTRACT_ADDRESS in watching mode")
 @click.argument('contract_address')
 def watch_tx(contract_address):
     response = cli_watch_tx(contract_address)
     click.echo(response)
 
 
+@click.command()
+@click.argument('N')
+@click.argument('contract_address')
+def holders(n, contract_address):
+    response = cli_holder(contract_address, n)
+    click.echo(response)
+
+
 cli.add_command(detail)
 cli.add_command(balanceOf)
 cli.add_command(watch_tx)
+cli.add_command(holders)
 
-
-if __name__ == '__main__':
+if __name__ == '__main__' and check_env():
     cli()
+else:
+    print("Please ensure that you create .env correctly. More information is in .env.example")
