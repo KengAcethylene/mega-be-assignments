@@ -151,3 +151,4 @@ cython_debug/
 
 # project
 top_holders.json
+latest_tx.json

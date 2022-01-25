@@ -1,3 +1,4 @@
+from web3.contract import Contract
 from os.path import join, dirname
 import json
 
@@ -16,3 +17,15 @@ int_to_unit = {
     6: 'mwei',
     3: 'kwei',
 }
+
+
+def decode_tx_input(input: str, contract_instance: Contract) -> dict:
+    if (len(input)) == 0:
+        return {}
+    else:
+        try:
+            func, data = contract_instance.decode_function_input(input)
+            data['function_name'] = str(func)
+            return data
+        except Exception:
+            return "It isn't ERC20 Function"

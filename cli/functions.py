@@ -1,9 +1,8 @@
-import imp
 import json
 from web3 import Web3
 from dotenv import load_dotenv, find_dotenv
 from os import environ
-from utils import erc20_ABI, int_to_unit
+from utils import erc20_ABI, int_to_unit, decode_tx_input
 import requests
 
 load_dotenv(find_dotenv())
@@ -11,18 +10,24 @@ load_dotenv(find_dotenv())
 #global vars
 RPC_ENDPOINT = ''
 ETHPLORER_API_KEY = ''
+ETHSCAN_API_KEY = ''
 provider = ''
+
 ETHPLORER_API_URL = "https://api.ethplorer.io"
+ETHSCAN_API_URL = "https://api.etherscan.io/api"
 
 
 def check_env() -> bool:
     global RPC_ENDPOINT
     global ETHPLORER_API_KEY
+    global ETHSCAN_API_KEY
     global provider
 
     RPC_ENDPOINT = environ.get('RPC_ENDPOINT')
     ETHPLORER_API_KEY = environ.get('ETHPLORER_API_KEY')
-    if (bool(RPC_ENDPOINT and ETHPLORER_API_KEY)):
+    ETHSCAN_API_KEY = environ.get('ETHSCAN_API_KEY')
+
+    if (bool(RPC_ENDPOINT and ETHPLORER_API_KEY and ETHSCAN_API_KEY)):
         provider = Web3(Web3.HTTPProvider(RPC_ENDPOINT))
         return provider.isConnected()
     else:
@@ -31,7 +36,6 @@ def check_env() -> bool:
 
 def cli_detail(contract_address: str) -> str:
     try:
-        global provider
         erc20token = provider.eth.contract(
             address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
 
@@ -50,7 +54,6 @@ def cli_detail(contract_address: str) -> str:
 
 def cli_balanceOf(contract_address: str, target_address: str) -> str:
     try:
-        global provider
         erc20token = provider.eth.contract(
             address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
 
@@ -70,7 +73,6 @@ def cli_balanceOf(contract_address: str, target_address: str) -> str:
 
 def cli_watch_tx(contract_address: str) -> str:
     try:
-        global provider
         is_printed_waiting = False
         while True:
             tx_fromBlock = provider.eth.filter(
@@ -93,11 +95,37 @@ def cli_watch_tx(contract_address: str) -> str:
         return str(e)
 
 
-def cli_latest_tx(N: str, contract_address: str):
+def cli_latest_tx(contract_address: str, N: str = '10'):
     try:
-        params = {
+        # * input validation
+        n = int(N)
+        contract_address = Web3.toChecksumAddress(contract_address)
 
+        # * params for the request
+        params = {
+            "module": "account",
+            "action": "txlist",
+            "address": contract_address,
+            "page": 1,
+            "offset": n,
+            "sort": "desc",
+            "apikey": ETHSCAN_API_KEY
         }
+
+        resp = requests.get(ETHSCAN_API_URL, params=params).json()
+        if resp.get('status') != '1':
+            return resp.get('message')
+        else:
+            data: list = resp.get('result')
+            instance = provider.eth.contract(
+                address=Web3.toChecksumAddress(contract_address), abi=erc20_ABI)
+
+            formatted_data = [{'sender': tx.get('from'), 'txHash': tx.get(
+                'hash'), 'params': decode_tx_input(tx.get('input'), instance)} for tx in data]
+
+            with open('latest_tx.json', 'w+') as f:
+                json.dump(formatted_data, f)
+            return "Updated latest_tx.json success"
     except ValueError:
         return "Invalid N or CONTRACT_ADDRESS"
     except Exception as e:
@@ -106,9 +134,6 @@ def cli_latest_tx(N: str, contract_address: str):
 
 def cli_holder(contract_address: str, N: str = '10') -> str:
     try:
-        global ETHPLORER_API_KEY
-        global ETHPLORER_API_URL
-
         # * input validation
         n = int(N)
         contract_address = Web3.toChecksumAddress(contract_address)
